@@ -34,7 +34,7 @@ a {
   background-color: blue !important;
 }
 
-.menu-aim__item--active>a {
+.menu-aim__item--active {
   color: white !important;
 
 }
@@ -42,6 +42,7 @@ a {
 .menu-container {
   position: relative;
   max-width: 200px;
+  height: 200px;
 }
 
 .menu-aim__item-submenu {
@@ -50,12 +51,8 @@ a {
   top: 0;
   left: 100%;
   width: 100%;
-  height: 200px;
+  height: 100%;
   background-color: antiquewhite;
-}
-
-.menu-aim__item--active .menu-aim__item-submenu {
-  display: block;
 }
 
 .menu-aim__item-submenu--active {

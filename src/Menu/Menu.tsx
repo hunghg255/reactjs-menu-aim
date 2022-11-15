@@ -95,7 +95,6 @@ const Menu = () => {
         {itemActive?.child?.map((it: any, idx: any) => {
           return <li key={idx}>{it.name}</li>;
         })}
-        asdas
       </ul>
     </div>
   );
