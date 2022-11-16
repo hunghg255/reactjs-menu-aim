@@ -47,6 +47,24 @@ const list = [
       },
     ],
   },
+  {
+    id: 6,
+    name: 'fizzz6',
+    child: [
+      {
+        name: 'fizz6 child',
+      },
+    ],
+  },
+  {
+    id: 7,
+    name: 'fizzz7',
+    child: [
+      {
+        name: 'fizz7 child',
+      },
+    ],
+  },
 ];
 
 const Menu = () => {
@@ -55,7 +73,8 @@ const Menu = () => {
   useEffect(() => {
     refMenu.current = menuAim({
       submenuDirection: 'right',
-      menuSelector: '.menu-container',
+      menuContainer: '.menu-container',
+      menuSelector: '.menu-aim',
       delay: 350,
       tolerance: 30,
       classItemActive: 'menu-aim__item--active',

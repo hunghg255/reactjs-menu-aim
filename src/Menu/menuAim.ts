@@ -1,10 +1,9 @@
 const MOUSE_LOCS_TRACKED = 3; // number of past mouse locations to trackv
 const DELAY = 300; // ms delay when user appears to be entering submenu
 const TOLERANCE = 75; // bigger = more forgivey when entering submenu
-// Consider multiple instance using ReactMenuAim, we just listen mousemove once
 const mouseLocs: any = [];
-let __reactMenuAimTimer: any;
-let _lastDelayDoc: any;
+let timerId: any;
+let lastDelayLoc: any;
 
 /**
  *
@@ -37,7 +36,7 @@ function offset(el: any) {
     };
   }
 
-  let rect = el.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
   return {
     top: rect.top + document.body.scrollTop,
     left: rect.left + document.body.scrollLeft,
@@ -46,7 +45,7 @@ function offset(el: any) {
 
 function outerWidth(el: any) {
   let _width = el.offsetWidth;
-  let style = el.currentStyle || getComputedStyle(el);
+  const style = el.currentStyle || getComputedStyle(el);
 
   _width += parseInt(style.marginLeft, 10) || 0;
   return _width;
@@ -54,7 +53,7 @@ function outerWidth(el: any) {
 
 function outerHeight(el: any) {
   let _height = el.offsetHeight;
-  let style = el.currentStyle || getComputedStyle(el);
+  const style = el.currentStyle || getComputedStyle(el);
 
   _height += parseInt(style.marginLeft, 10) || 0;
   return _height;
@@ -80,29 +79,32 @@ function handleMouseMoveDocument(e: any) {
 
 function getActivateDelay(config: any) {
   config = config || {};
-  let menu = document.querySelector(config.menuSelector);
+  let menuContainer = document.querySelector(config.menuContainer);
 
   // If can't find any DOM node
-  if (!menu || !menu.querySelector) {
+  if (!menuContainer || !menuContainer.querySelector) {
     return 0;
   }
 
-  let menuOffset = offset(menu);
+  const menuOffset = offset(menuContainer);
 
   let upperLeft = {
     x: menuOffset.left,
     y: menuOffset.top - (config.tolerance || TOLERANCE),
   };
   let upperRight = {
-    x: menuOffset.left + outerWidth(menu),
+    x: menuOffset.left + outerWidth(menuContainer),
     y: upperLeft.y,
   };
   let lowerLeft = {
     x: menuOffset.left,
-    y: menuOffset.top + outerHeight(menu) + (config.tolerance || TOLERANCE),
+    y:
+      menuOffset.top +
+      outerHeight(menuContainer) +
+      (config.tolerance || TOLERANCE),
   };
   let lowerRight = {
-    x: menuOffset.left + outerWidth(menu),
+    x: menuOffset.left + outerWidth(menuContainer),
     y: lowerLeft.y,
   };
 
@@ -130,7 +132,7 @@ function getActivateDelay(config: any) {
 
   // If the mouse hasn't moved since the last time we checked
   // for activation status, immediately activate.
-  if (_lastDelayDoc && loc.x === _lastDelayDoc.x && loc.y === _lastDelayDoc.y) {
+  if (lastDelayLoc && loc.x == lastDelayLoc.x && loc.y == lastDelayLoc.y) {
     return 0;
   }
 
@@ -149,6 +151,7 @@ function getActivateDelay(config: any) {
     increasingCorner = lowerLeft;
   } else if (config.submenuDirection === 'above') {
     decreasingCorner = upperLeft;
+    increasingCorner = upperRight;
   }
 
   let decreasingSlope = slope(loc, decreasingCorner);
@@ -160,11 +163,12 @@ function getActivateDelay(config: any) {
     decreasingSlope < prevDecreasingSlope &&
     increasingSlope > prevIncreasingSlope
   ) {
-    _lastDelayDoc = loc;
+    lastDelayLoc = loc;
     return config.delay || DELAY;
   }
 
-  _lastDelayDoc = null;
+  lastDelayLoc = null;
+
   return 0;
 }
 
@@ -176,57 +180,57 @@ function activate(rowIdentifier: any, handler: any, config: any) {
 }
 
 function possiblyActivate(rowIdentifier: any, handler: any, config: any): any {
-  let delay = getActivateDelay(config);
+  const delay = getActivateDelay(config);
 
   if (delay) {
-    __reactMenuAimTimer = setTimeout(function () {
+    timerId = setTimeout(function () {
       possiblyActivate(rowIdentifier, handler, config);
     }, delay);
   } else {
-    if (__reactMenuAimTimer) {
-      clearTimeout(__reactMenuAimTimer);
-      __reactMenuAimTimer = null;
-      return;
-    }
     activate(rowIdentifier, handler, config);
   }
 }
 
-export const menuAim = function (options: any) {
-  const __reactMenuAimConfig = options;
-  const menu: any = document.querySelector(options.menuSelector);
+export const menuAim = function (configs: any) {
+  const menuContainer: any = document.querySelector(configs.menuContainer);
+  const menuSelector: any = document.querySelector(configs.menuSelector);
 
   const handleMouseEnterRow = function (rowIdentifier: any, handler: any) {
-    if (__reactMenuAimTimer) {
-      clearTimeout(__reactMenuAimTimer);
-      __reactMenuAimTimer = null;
-      return;
+    if (timerId) {
+      clearTimeout(timerId);
+      timerId = null;
     }
 
-    possiblyActivate(rowIdentifier, handler, __reactMenuAimConfig);
+    possiblyActivate(rowIdentifier, handler, configs);
+  };
+
+  const clearTime = () => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+    timerId = null;
   };
 
   const handleOnMouseLeave = () => {
-    const subMenu = document.querySelector(options.classPopup);
-    const itemActive = document.querySelector(`.${options.classItemActive}`);
-    subMenu && subMenu.classList.remove(options.classPopupActive);
-    itemActive && itemActive.classList.remove(options.classItemActive);
-    _lastDelayDoc = undefined;
+    const subMenu = document.querySelector(configs.classPopup);
+    const itemActive = document.querySelector(`.${configs.classItemActive}`);
+    subMenu && subMenu.classList.remove(configs.classPopupActive);
+    itemActive && itemActive.classList.remove(configs.classItemActive);
+    lastDelayLoc = undefined;
 
-    if (__reactMenuAimTimer) {
-      clearTimeout(__reactMenuAimTimer);
-    }
-    __reactMenuAimTimer = null;
+    clearTime();
   };
 
   const onDidmount = () => {
     handleOnMouseLeave();
     off(document, 'mousemove', handleMouseMoveDocument);
-    off(menu, 'mouseleave', handleOnMouseLeave);
+    off(menuContainer, 'mouseleave', handleOnMouseLeave);
+    off(menuSelector, 'mouseleave', clearTime);
   };
 
   on(document, 'mousemove', handleMouseMoveDocument);
-  on(menu, 'mouseleave', handleOnMouseLeave);
+  on(menuContainer, 'mouseleave', handleOnMouseLeave);
+  on(menuSelector, 'mouseleave', clearTime);
 
   return {
     handleMouseEnterRow,
