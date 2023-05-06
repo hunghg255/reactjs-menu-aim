@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@uiw/react-github-corners": "^1.5.15",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-gh-corners": "^1.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.0.24",
